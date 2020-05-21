@@ -16,7 +16,6 @@ const createTestResource = async (name: string) => {
     return { ...input, resourceId }
 }
 
-jest.setTimeout(60 * 1000);
 describe('Resources', () => {
     afterAll(async () => {
         await Promise.all(createdResourceIds.map(resourceId => resourceDao.deleteResource(resourceId)))

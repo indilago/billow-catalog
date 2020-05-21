@@ -34,7 +34,15 @@ export async function fetchAll<T>(query: QueryIterator<T>, params?: { limit?: nu
     return items
 }
 
-export default class DynamoDbDaos implements PlanDao, ProductDao {
+/**
+ * Logs and rethrows an error
+ */
+export const logError = (message: string) => (err: Error) => {
+    console.error(message, err)
+    throw err
+}
+
+export default class DynamoDbDaos implements PlanDao {
     private mapper: DataMapper
 
     constructor(config: DataMapperConfiguration) {
@@ -43,31 +51,6 @@ export default class DynamoDbDaos implements PlanDao, ProductDao {
 
     public static default() {
         return new DynamoDbDaos({client: new DynamoDBClient()})
-    }
-
-    async listProducts() {
-        const condition = {plan: PRODUCT_METADATA_VALUE}
-        return fetchAll(this.mapper.query(DDBProduct, condition))
-    }
-
-    async createProduct(product: Product): Promise<Product> {
-        const record = Object.assign(new DDBProduct, product)
-        return this.mapper.put(record)
-    }
-
-    async getProduct(productId: string): Promise<Product> {
-        const keyRecord = Object.assign(new DDBProduct, {productId})
-        return this.mapper.get(keyRecord)
-    }
-
-    async deleteProduct({productId}: DeleteProductInput): Promise<void> {
-        const keyRecord = Object.assign(new DDBProduct, {productId})
-        try {
-            await this.mapper.delete(keyRecord)
-        } catch (e) {
-            console.warn('failed to delete product', e)
-        }
-        return Promise.resolve()
     }
 
     async listPlans(productId: string, currency: Currency, effectiveDate: Date): Promise<Plan[]> {

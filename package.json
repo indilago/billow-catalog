@@ -31,7 +31,7 @@
     "typescript": "^3.9.2"
   },
   "jest": {
-    "moduleFileExtensions": ["ts"],
+    "moduleFileExtensions": ["js","ts"],
     "transform": {
       "^.+\\.ts$": "ts-jest"
     },

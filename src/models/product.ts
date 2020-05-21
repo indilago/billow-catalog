@@ -1,4 +1,6 @@
 
+type EntitlementsObject = {[resourceId: string]: Entitlement}
+
 export interface Entitlement {
     value: number
     cumulative: boolean
@@ -15,7 +17,7 @@ export interface Product {
 export interface CreateProductInput {
     name: string
     description?: string
-    entitlements: Map<string, Entitlement>
+    entitlements: EntitlementsObject
 }
 
 export interface CreateProductOutput {
@@ -24,4 +26,13 @@ export interface CreateProductOutput {
 
 export interface DeleteProductInput {
     productId: string
+}
+
+export interface ModifyProductInput {
+    productId: string
+    name?: string
+    description?: string
+    entitlements?: EntitlementsObject
+    addEntitlements?: EntitlementsObject
+    removeEntitlements?: string[]
 }

@@ -1,8 +1,9 @@
-import {CreateProductInput, CreateProductOutput, DeleteProductInput, Product} from '../models/product'
+import {CreateProductInput, CreateProductOutput, ModifyProductInput, Product} from '../models/product'
 
 export interface ProductDao {
     listProducts(): Promise<Product[]>
-    getProduct(id: string): Promise<Product>
-    createProduct(input: CreateProductInput): Promise<CreateProductOutput>
-    deleteProduct(input: DeleteProductInput): Promise<void>
+    getProduct(productId: string): Promise<Product|null>
+    createProduct(input: CreateProductInput): Promise<Product>
+    deleteProduct(productId: string): Promise<Product|null>
+    updateProduct(input: ModifyProductInput): Promise<Product>
 }

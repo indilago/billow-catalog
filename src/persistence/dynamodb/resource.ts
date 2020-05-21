@@ -4,7 +4,7 @@ import {
 } from '@aws/dynamodb-data-mapper-annotations'
 import {DataMapper} from '@aws/dynamodb-data-mapper'
 import {v4 as uuid} from 'uuid'
-import {CATALOG_TABLE, fetchAll} from './index'
+import {CATALOG_TABLE, fetchAll, logError} from './index'
 import {
     CreateResourceInput,
     CreateResourceOutput,
@@ -50,14 +50,6 @@ export class DDBResource implements Resource {
     defaultValue: number
 }
 
-const logError = (message: string) => (err: Error) => {
-    console.error(message, err)
-    throw err
-}
-const suppressError = (message: string) => (err: Error) => {
-    console.warn(message, err)
-}
-
 export class DDBResourceDao implements ResourceDao {
     constructor(private readonly mapper: DataMapper) {
     }
@@ -96,6 +88,7 @@ export class DDBResourceDao implements ResourceDao {
     }
 
     async listResources(): Promise<Resource[]> {
+        // @todo: cache these results, as the scan is expensive and resources will be relatively static
         const query = this.mapper.scan(DDBResource, {
             indexName: RESOURCES_GSI,
         })

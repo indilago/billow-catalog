@@ -67,7 +67,7 @@ async function validateModifyResource(input: any): Promise<ModifyResourceInput> 
 export default function Resources(app: Express, resources: ResourceDao) {
     app.get('/resources/:id', (req, res) => {
         if (!req.params.id) {
-            throw new BadInputError(['Parameter resourceId is missing'])
+            errorResponse(res)(new BadInputError(['Parameter resourceId is missing']))
         }
         resources.getResource(req.params.id)
             .then(resource => {
@@ -87,7 +87,7 @@ export default function Resources(app: Express, resources: ResourceDao) {
 
     app.put('/resources', (req, res) => {
         if (!req.body) {
-            throw new BadInputError(['No input received'])
+            errorResponse(res)(new BadInputError(['No input received']))
         }
         (req.body.resourceId ? resources.getResource(req.body.resourceId) : Promise.resolve(null))
             .then(existingItem => {
@@ -108,7 +108,7 @@ export default function Resources(app: Express, resources: ResourceDao) {
 
     app.delete('/resources/:id', (req, res) => {
         if (!req.params.id) {
-            throw new BadInputError(['Parameter resourceId is missing'])
+            errorResponse(res)(new BadInputError(['Parameter resourceId is missing']))
         }
         resources.deleteResource(req.params.id)
             .then(r => {
