@@ -1,0 +1,48 @@
+{
+  "name": "billow-catalog",
+  "version": "0.0.0",
+  "description": "Serves a catalog representing resources and their mapping to plans",
+  "main": "index.ts",
+  "scripts": {
+    "test": "jest",
+    "generate-api": "./spot/bin/run generate -c api/api.ts -g openapi3 -l yaml -o ./api",
+    "generate-api-json": "./spot/bin/run generate -c api/api.ts -g openapi3 -l json -o ./api"
+  },
+  "author": "Kelly Banman <kelly.banman@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@aws/dynamodb-data-mapper": "^0.7.3",
+    "@aws/dynamodb-expressions": "^0.7.3",
+    "aws-sdk": "^2.680.0",
+    "express": "^4.17.1",
+    "uuid": "^7.0.3"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.6",
+    "@types/jest": "^25.2.3",
+    "@types/node": "^13.13.7",
+    "@types/supertest": "^2.0.9",
+    "@types/uuid": "^7.0.4",
+    "@aws/dynamodb-data-mapper-annotations": "^0.7.3",
+    "jest": "^25.5.4",
+    "supertest": "^4.0.2",
+    "ts-jest": "^25.5.1",
+    "tslint": "^6.1.2",
+    "typescript": "^3.9.2"
+  },
+  "jest": {
+    "moduleFileExtensions": ["ts"],
+    "transform": {
+      "^.+\\.ts$": "ts-jest"
+    },
+    "globals": {
+      "ts-jest": {
+        "tsConfig": "tsconfig.json"
+      }
+    },
+    "testMatch": [
+      "**/*.test.ts"
+    ],
+    "setupFiles": ["<rootDir>/jest.setup.js"]
+  }
+}
