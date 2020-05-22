@@ -20,6 +20,7 @@ export interface CreatePlanInput {
 
 export interface ModifyPlanInput {
     planId: string
+    productId?: string
     name?: string
     description?: string
     stripePlanId?: string

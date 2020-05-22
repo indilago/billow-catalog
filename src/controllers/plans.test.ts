@@ -119,6 +119,17 @@ describe('Plans', () => {
             expect(dbPlan.name).toEqual(input.name)
         })
 
+        it('Throws a 400 for a bad productId', async () => {
+            const {planId} = await createTestPlan('update-400')
+            const input: ModifyPlanInput = {
+                planId,
+                name: 'foo-test-2',
+                productId: uuid(),
+            }
+            const res = await request(app).patch(`/plans/${planId}`).send(input)
+            expect(res.status).toEqual(400)
+        })
+
         it('Throws a 404 when nonexistent', async () => {
             const response = await request(app).get(`/plans/${uuid()}`)
             expect(response.status).toEqual(404)

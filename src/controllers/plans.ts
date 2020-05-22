@@ -40,7 +40,7 @@ async function validateCreatePlan(productDao: ProductDao, input: any): Promise<C
 /**
  * @throws BadInputError
  */
-async function validateModifyPlan(input: any): Promise<ModifyPlanInput> {
+async function validateModifyPlan(productDao: ProductDao, input: any): Promise<ModifyPlanInput> {
     const errors = []
     if (!input.planId) {
         errors.push('A planId is required')
@@ -53,6 +53,12 @@ async function validateModifyPlan(input: any): Promise<ModifyPlanInput> {
     }
     if (input.description?.length > 127) {
         errors.push(`Field 'description' must be shorter than 128 characters`)
+    }
+    if (input.productId) {
+        const product = await productDao.getProduct(input.productId)
+        if (!product) {
+            errors.push(`Invalid productId '${input.productId}'`)
+        }
     }
     if (errors.length) {
         throw new BadInputError(errors)
@@ -111,7 +117,7 @@ export default function PlansController(app: Express, plans: PlanDao, products: 
         if (!req.body) {
             return errorResponse(res)(new BadInputError(['No input received']))
         }
-        validateModifyPlan({ ...req.body, planId: req.params.id })
+        validateModifyPlan(products, { ...req.body, planId: req.params.id })
             .then(input => plans.updatePlan(input))
             .then(plan => res.send({plan}))
             .catch(errorResponse(res))
