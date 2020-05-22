@@ -31,7 +31,10 @@
     "typescript": "^3.9.2"
   },
   "jest": {
-    "moduleFileExtensions": ["js","ts"],
+    "moduleFileExtensions": [
+      "js",
+      "ts"
+    ],
     "transform": {
       "^.+\\.ts$": "ts-jest"
     },
@@ -43,6 +46,8 @@
     "testMatch": [
       "**/*.test.ts"
     ],
-    "setupFiles": ["<rootDir>/jest.setup.js"]
+    "setupFiles": [
+      "<rootDir>/jest.setup.js"
+    ]
   }
 }

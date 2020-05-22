@@ -33,7 +33,6 @@ const createTestPlan = async (name: string, currency: Currency = 'CAD', productI
     return {...input, planId}
 }
 
-jest.setTimeout(120*1000)
 describe('Plans', () => {
     afterAll(async () => {
         await Promise.all(createdPlanIds.map(planId => planDao.deletePlan(planId)))
@@ -105,7 +104,7 @@ describe('Plans', () => {
 
     describe('PATCH /plans/{planId} - ModifyPlan', () => {
         it('Updates an existing plan', async () => {
-            const {planId} = await createTestPlan('update')
+            const {planId} = await createTestPlan('update-exist')
             const input: ModifyPlanInput = {
                 planId,
                 name: 'foo-test-2',
@@ -128,7 +127,7 @@ describe('Plans', () => {
 
     describe('GET /plans - ListPlans', () => {
         it('Returns all plans', async () => {
-            const {planId} = await createTestPlan('update')
+            const {planId} = await createTestPlan('query-1')
             const result = await request(app).get('/plans')
             expect(result.status).toEqual(200)
             expect(result.body.plans).toBeDefined()
@@ -149,8 +148,8 @@ describe('Plans', () => {
         })
 
         it('Returns plans for a product and currency', async () => {
-            const {planId, productId, currency} = await createTestPlan('update', 'CAD')
-            await createTestPlan('update', 'USD', productId)
+            const {planId, productId, currency} = await createTestPlan('query-3a', 'CAD')
+            await createTestPlan('query-3b', 'USD', productId)
             const result = await request(app).get(`/plans?productId=${productId}&currency=${currency}`)
             expect(result.status).toEqual(200)
             const plans = result.body.plans as Plan[]

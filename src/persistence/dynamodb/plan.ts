@@ -128,8 +128,20 @@ export class DDBPlanDao implements PlanDao {
 
     updatePlan(input: ModifyPlanInput): Promise<Plan> {
         return this.getPlan(input.planId)
-            .then(item => {
+            .then(async item => {
                 const updated = Object.assign(new DDBPlan, {...item, ...input})
+                if (makePlanKey(item.currency, item.name) !== makePlanKey(updated.currency, updated.name)) {
+                    // Ideally we would transactionally put a new item and delete the old one
+                    // but the js data mapper currently doesn't support transactions.
+                    for await (const result of this.mapper.batchWrite([
+                        ['put', updated],
+                        ['delete', Object.assign(new DDBPlan, item)],
+                    ])) {
+                        if (result[0] === 'put') {
+                            return result[1] as DDBPlan
+                        }
+                    }
+                }
                 return this.mapper.put(updated)
             })
             .then(plan => plan.toPlan())
