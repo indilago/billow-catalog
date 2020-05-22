@@ -64,7 +64,7 @@ async function validateModifyResource(input: any): Promise<ModifyResourceInput> 
     return input as ModifyResourceInput
 }
 
-export default function Resources(app: Express, resources: ResourceDao) {
+export default function ResourcesController(app: Express, resources: ResourceDao) {
     app.get('/resources/:id', (req, res) => {
         if (!req.params.id) {
             errorResponse(res)(new BadInputError(['Parameter resourceId is missing']))

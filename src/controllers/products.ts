@@ -2,9 +2,8 @@ import {Express} from 'express'
 import {ResourceDao} from '../persistence/resource-dao'
 import {BadInputError, NotFoundError} from '../exceptions'
 import {errorResponse} from './util'
-import {CreateProductInput, Entitlement, ModifyProductInput} from '../models/product'
+import {CreateProductInput, Entitlement, ModifyProductInput, Product} from '../models/product'
 import {ProductDao} from '../persistence/product-dao'
-
 
 /**
  * Validates the given entitlements
@@ -68,7 +67,28 @@ async function validateModifyProduct(input: any): Promise<ModifyProductInput> {
     return input as ModifyProductInput
 }
 
-export default function Products(app: Express, products: ProductDao, resources: ResourceDao) {
+function mapToObject(map?: Map<string, any>) {
+    if (!map) {
+        return {}
+    }
+    const m: any = {}
+    map.forEach((value, key) => m[key] = value)
+    return m
+}
+
+/**
+ * Marshall a Product to a json-friendly object
+ */
+function marshallProduct(product: Product): any {
+    const p = { ...product }
+    p.entitlements = mapToObject(product.entitlements)
+    return p
+}
+function marshallProducts(products: Product[]): any {
+    return products.map(marshallProduct)
+}
+
+export default function ProductsController(app: Express, products: ProductDao, resources: ResourceDao) {
     app.get('/products/:id', (req, res) => {
         if (!req.params.id) {
             return errorResponse(res)(new BadInputError(['Parameter productId is missing']))
@@ -78,14 +98,14 @@ export default function Products(app: Express, products: ProductDao, resources: 
                 if (!product) {
                     throw new NotFoundError()
                 }
-                res.send({product: product})
+                res.send({product: marshallProduct(product)})
             })
             .catch(errorResponse(res))
     })
 
     app.get('/products', (req, res) => {
         products.listProducts()
-            .then(products => res.send({products: products}))
+            .then(products => res.send({products: marshallProducts(products)}))
             .catch(errorResponse(res))
     })
 
@@ -95,7 +115,7 @@ export default function Products(app: Express, products: ProductDao, resources: 
         }
         validateCreateProduct(resources, req.body)
             .then(input => products.createProduct(input))
-            .then(product => res.send({product}))
+            .then(product => res.send({product: marshallProduct(product)}))
             .catch(errorResponse(res))
     })
 
@@ -106,9 +126,9 @@ export default function Products(app: Express, products: ProductDao, resources: 
         if (!req.body) {
             return errorResponse(res)(new BadInputError(['No input received']))
         }
-        validateModifyProduct(req.body)
+        validateModifyProduct({ ...req.body, productId: req.params.id })
             .then(input => products.updateProduct(input))
-            .then(product => res.send({product}))
+            .then(product => res.send({product: marshallProduct(product)}))
             .catch(errorResponse(res))
     })
 

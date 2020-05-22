@@ -1,21 +1,21 @@
-import {MeteringType} from './resource'
+export type Currency = 'CAD' | 'USD' | 'MXN'
 
 export interface Plan {
     planId: string
     createdAt: Date
+    productId: string
     name: string
+    currency: Currency
     description?: string
     stripePlanId?: string
 }
 
 export interface CreatePlanInput {
     name: string
+    productId: string
+    currency: Currency
     description?: string
     stripePlanId?: string
-}
-
-export interface CreatePlanOutput {
-    planId: string
 }
 
 export interface ModifyPlanInput {

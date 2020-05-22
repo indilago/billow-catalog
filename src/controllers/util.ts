@@ -3,7 +3,9 @@ import {isBadInputError, isNotFoundError} from '../exceptions'
 
 export const errorResponse = (response: Response) => (error: Error) => {
     if (isBadInputError(error)) {
-        console.log('Input error', error)
+        if (process.env.NODE_ENV !== 'test') {
+            console.log('Input error', error)
+        }
         return response.status(400).send({errors: error.errors})
     }
     if (isNotFoundError(error)) {

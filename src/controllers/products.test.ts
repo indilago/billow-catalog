@@ -1,6 +1,6 @@
-import app, {productDao, resourceDao} from '../app'
 import request from 'supertest'
 import {v4 as uuid} from 'uuid'
+import app, {productDao, resourceDao} from '../app'
 import {CreateResourceInput} from '../models/resource'
 import {CreateProductInput, ModifyProductInput, Product} from '../models/product'
 
@@ -47,9 +47,12 @@ describe('Products', () => {
             }
             const result = await request(app).post('/products').send(input)
             expect(result.status).toEqual(200)
-            expect(result.body).toHaveProperty('product')
-            expect(result.body.product.productId).toBeTruthy()
-            createdProductIds.push(result.body.productId)
+            expect(result.body.product).toBeDefined()
+            const product = result.body.product as Product
+            expect(product.productId).toBeTruthy()
+            expect(product.name).toEqual(input.name)
+            expect(product.entitlements).toEqual(input.entitlements)
+            createdProductIds.push(product.productId)
         })
         it('Throws 400 for bad resourceIds', async () => {
             const input: CreateProductInput = {
@@ -103,8 +106,8 @@ describe('Products', () => {
 
             const response = await request(app).get(`/products/${productId}`)
             expect(response.status).toEqual(200)
-            expect(response.body).toHaveProperty('product')
-            const p = (response.body.product as Product)
+            expect(response.body.product).toBeDefined()
+            const p = response.body.product as Product
             expect(p.productId).toEqual(productId)
             expect(p.name).toEqual(product.name)
             expect(p.description).toEqual(product.description)
@@ -123,6 +126,8 @@ describe('Products', () => {
             const response = await request(app).delete(`/products/${productId}`)
             expect(response.status).toEqual(200)
             expect(response.body.productId).toEqual(productId)
+            const dbProduct = await productDao.getProduct(productId)
+            expect(dbProduct).toBeNull()
         })
 
         it('Gracefully responds on non-existent product', async () => {

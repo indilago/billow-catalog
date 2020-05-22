@@ -1,6 +1,6 @@
-import app, {resourceDao} from '../app'
 import request from 'supertest'
 import {v4 as uuid} from 'uuid'
+import app, {resourceDao} from '../app'
 import {CreateResourceInput, ModifyResourceInput, Resource} from '../models/resource'
 
 const createdResourceIds: string[] = []

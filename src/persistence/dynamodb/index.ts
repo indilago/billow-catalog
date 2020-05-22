@@ -7,6 +7,7 @@ import {Plan} from '../../models/plan'
 import {ProductDao} from '../product-dao'
 import DynamoDBClient from 'aws-sdk/clients/dynamodb'
 import PlanDao from '../plan-dao'
+import {ConditionExpression, equals} from '@aws/dynamodb-expressions'
 
 export const CATALOG_TABLE = process.env.CATALOG_TABLE || 'BillowCatalog'
 const DEFAULT_QUERY_LIMIT = 1000
@@ -42,29 +43,3 @@ export const logError = (message: string) => (err: Error) => {
     throw err
 }
 
-export default class DynamoDbDaos implements PlanDao {
-    private mapper: DataMapper
-
-    constructor(config: DataMapperConfiguration) {
-        this.mapper = new DataMapper(config)
-    }
-
-    public static default() {
-        return new DynamoDbDaos({client: new DynamoDBClient()})
-    }
-
-    async listPlans(productId: string, currency: Currency, effectiveDate: Date): Promise<Plan[]> {
-        const query = this.mapper.query(DDBPlan, planCondition(currency), {indexName: PLANS_GSI})
-        return fetchAll(query, {
-            filter: plan => {
-                const validStart = (!plan.startDate || plan.startDate <= effectiveDate)
-                const validEnd = (!plan.endDate || plan.endDate >= effectiveDate)
-                if (validStart && validEnd) {
-                    return true
-                }
-                console.log(`[getPlans] Excluding record for effective date ${effectiveDate} (${plan.startDate} - ${plan.endDate})`)
-                return false
-            }
-        })
-    }
-}
