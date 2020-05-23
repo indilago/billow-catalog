@@ -2,7 +2,7 @@ import {Express} from 'express'
 import {ResourceDao} from '../persistence/resource-dao'
 import {CreateResourceInput, ModifyResourceInput} from '../models/resource'
 import {BadInputError, NotFoundError} from '../exceptions'
-import {errorResponse} from './util'
+import {errorResponse, filterFields} from './util'
 
 /**
  * @throws BadInputError
@@ -34,7 +34,9 @@ async function validateCreateResource(input: any): Promise<CreateResourceInput> 
     if (errors.length) {
         throw new BadInputError(errors)
     }
-    return input as CreateResourceInput
+    const validFields: (keyof CreateResourceInput)[] =
+        ['resourceId', 'name', 'description', 'meteringType', 'defaultValue']
+    return filterFields<CreateResourceInput>(validFields, input)
 }
 
 /**
@@ -61,7 +63,10 @@ async function validateModifyResource(input: any): Promise<ModifyResourceInput> 
     if (errors.length) {
         throw new BadInputError(errors)
     }
-    return input as ModifyResourceInput
+
+    const validFields: (keyof ModifyResourceInput)[] =
+        ['resourceId', 'name', 'description', 'meteringType', 'defaultValue']
+    return filterFields<ModifyResourceInput>(validFields, input)
 }
 
 export default function ResourcesController(app: Express, resources: ResourceDao) {
@@ -85,6 +90,29 @@ export default function ResourcesController(app: Express, resources: ResourceDao
             .catch(errorResponse(res))
     })
 
+    app.patch('/resources/:id', (req, res) => {
+        if (!req.params.id) {
+            errorResponse(res)(new BadInputError(['Parameter resourceId is missing']))
+        }
+        if (!req.body) {
+            errorResponse(res)(new BadInputError(['No input received']))
+        }
+        return validateModifyResource(req.body)
+            .then(input => {
+                return resources.getResource(req.params.id)
+                    .then(existingItem => {
+                        if (!existingItem) {
+                            throw new NotFoundError()
+                        }
+                        return resources.updateResource({...input, resourceId: existingItem.resourceId})
+
+                    })
+                    .then(resource => res.send({resource}))
+
+            })
+            .catch(errorResponse(res))
+
+    })
     app.put('/resources', (req, res) => {
         if (!req.body) {
             errorResponse(res)(new BadInputError(['No input received']))
@@ -95,14 +123,13 @@ export default function ResourcesController(app: Express, resources: ResourceDao
                     return validateModifyResource(req.body)
                         .then(input => {
                             return resources.updateResource({...input, resourceId: existingItem.resourceId})
-                                .then(() => ({...existingItem, ...input}))
                         })
                 } else {
                     return validateCreateResource(req.body)
                         .then(input => resources.createResource(input))
                 }
             })
-            .then(result => res.send({resourceId: result.resourceId}))
+            .then(resource => res.send({resource}))
             .catch(errorResponse(res))
     })
 
@@ -116,7 +143,7 @@ export default function ResourcesController(app: Express, resources: ResourceDao
                     res.status(204).send()
                     return
                 }
-                res.status(200).send({resourceId:req.params.id})
+                res.status(200).send({resourceId: req.params.id})
             })
             .catch(errorResponse(res))
     })

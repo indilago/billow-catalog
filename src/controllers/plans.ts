@@ -1,6 +1,6 @@
 import {Express} from 'express'
 import {BadInputError, NotFoundError} from '../exceptions'
-import {errorResponse} from './util'
+import {errorResponse, filterFields} from './util'
 import {ProductDao} from '../persistence/product-dao'
 import {CreatePlanInput, ModifyPlanInput} from '../models/plan'
 import PlanDao from '../persistence/plan-dao'
@@ -21,6 +21,7 @@ async function validateCreatePlan(productDao: ProductDao, input: any): Promise<C
     if (!input.currency) {
         errors.push(`Required field 'currency' is missing`)
     }
+    input.currency = input.currency.toUpperCase()
     if (!VALID_CURRENCIES.includes(input.currency)) {
         errors.push(`Currency must be one of (${VALID_CURRENCIES.join(', ')})`)
     }
@@ -34,7 +35,9 @@ async function validateCreatePlan(productDao: ProductDao, input: any): Promise<C
     if (errors.length) {
         throw new BadInputError(errors)
     }
-    return input as CreatePlanInput
+    const validFields: (keyof CreatePlanInput)[] =
+        ['productId', 'name', 'description', 'currency', 'stripePlanId']
+    return filterFields<CreatePlanInput>(validFields, input)
 }
 
 /**
@@ -45,8 +48,11 @@ async function validateModifyPlan(productDao: ProductDao, input: any): Promise<M
     if (!input.planId) {
         errors.push('A planId is required')
     }
-    if (input.hasOwnProperty('currency') && !VALID_CURRENCIES.includes(input.currency)) {
-        errors.push(`Currency must be one of (${VALID_CURRENCIES.join(', ')})`)
+    if (input.hasOwnProperty('currency')) {
+        input.currency = input.currency.toUpperCase()
+        if (!VALID_CURRENCIES.includes(input.currency)) {
+            errors.push(`Currency must be one of (${VALID_CURRENCIES.join(', ')})`)
+        }
     }
     if (input.name?.length > 127) {
         errors.push(`Field 'name' must be shorter than 128 characters`)
@@ -63,7 +69,10 @@ async function validateModifyPlan(productDao: ProductDao, input: any): Promise<M
     if (errors.length) {
         throw new BadInputError(errors)
     }
-    return input as ModifyPlanInput
+
+    const validFields: (keyof ModifyPlanInput)[] =
+        ['planId', 'productId', 'name', 'description', 'currency', 'stripePlanId']
+    return filterFields<ModifyPlanInput>(validFields, input)
 }
 
 function validateDateInput(input?: any): Date|undefined {

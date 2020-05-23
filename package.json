@@ -4,9 +4,8 @@
   "description": "Serves a catalog representing resources and their mapping to plans",
   "main": "index.ts",
   "scripts": {
-    "test": "jest",
-    "generate-api": "./spot/bin/run generate -c api/api.ts -g openapi3 -l yaml -o ./api",
-    "generate-api-json": "./spot/bin/run generate -c api/api.ts -g openapi3 -l json -o ./api"
+    "ts-start": "ts-node src/server.ts",
+    "test": "jest"
   },
   "author": "Kelly Banman <kelly.banman@gmail.com>",
   "license": "MIT",

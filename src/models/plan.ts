@@ -21,6 +21,7 @@ export interface CreatePlanInput {
 export interface ModifyPlanInput {
     planId: string
     productId?: string
+    currency?: Currency
     name?: string
     description?: string
     stripePlanId?: string

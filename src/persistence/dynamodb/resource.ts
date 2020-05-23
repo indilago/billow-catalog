@@ -12,6 +12,7 @@ import {
     Resource
 } from '../../models/resource'
 import {ResourceDao} from '../resource-dao'
+import {NotFoundError} from '../../exceptions'
 
 export const RESOURCES_GSI = 'ResourcesIndex'
 
@@ -54,15 +55,9 @@ export class DDBResourceDao implements ResourceDao {
     constructor(private readonly mapper: DataMapper) {
     }
 
-    async createResource(input: CreateResourceInput): Promise<CreateResourceOutput> {
-        const item = Object.assign(new DDBResource, {
-            name: input.name,
-            description: input.description,
-            meteringType: input.meteringType,
-            defaultValue: input.defaultValue,
-        })
+    async createResource(input: CreateResourceInput): Promise<Resource> {
+        const item = Object.assign(new DDBResource, input)
         return this.mapper.put(item)
-            .then(({resourceId}) => ({resourceId}))
             .catch(logError('Failed to insert Resource'))
     }
 
@@ -95,12 +90,14 @@ export class DDBResourceDao implements ResourceDao {
         return fetchAll(query)
     }
 
-    updateResource(input: ModifyResourceInput): Promise<void> {
+    updateResource(input: ModifyResourceInput): Promise<Resource> {
         return this.getResource(input.resourceId)
             .then(item => {
+                if (!item) {
+                    throw new NotFoundError()
+                }
                 const updated = Object.assign(new DDBResource, { ...item, ...input })
                 return this.mapper.put(updated)
             })
-            .then(() => {})
     }
 }

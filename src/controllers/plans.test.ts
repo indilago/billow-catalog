@@ -131,7 +131,7 @@ describe('Plans', () => {
         })
 
         it('Throws a 404 when nonexistent', async () => {
-            const response = await request(app).get(`/plans/${uuid()}`)
+            const response = await request(app).patch(`/plans/${uuid()}`)
             expect(response.status).toEqual(404)
         })
     })

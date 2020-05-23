@@ -1,23 +1,27 @@
 
-type EntitlementsObject = {[resourceId: string]: Entitlement}
+interface EntitlementsObject {
+    [resourceId: string]: Entitlement
+}
 
 export interface Entitlement {
     value: number
-    cumulative: boolean
+    cumulative?: boolean
 }
 
 export interface Product {
     productId: string
+    createdAt: Date
     name: string
     description?: string
-    createdAt: Date
     entitlements: Map<string, Entitlement>
+    stripeProductId?: string
 }
 
 export interface CreateProductInput {
     name: string
     description?: string
     entitlements: EntitlementsObject
+    stripeProductId?: string
 }
 
 export interface CreateProductOutput {
@@ -35,4 +39,5 @@ export interface ModifyProductInput {
     entitlements?: EntitlementsObject
     addEntitlements?: EntitlementsObject
     removeEntitlements?: string[]
+    stripeProductId?: string
 }

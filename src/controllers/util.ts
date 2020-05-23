@@ -14,3 +14,12 @@ export const errorResponse = (response: Response) => (error: Error) => {
     console.error('Unexpected error', error)
     response.status(500).send({error: error.message})
 }
+
+export const filterFields = <T> (validFields: (keyof T)[], input: any): T => {
+    return validFields.reduce((sanitized, field) => {
+        if (input.hasOwnProperty(field)) {
+            sanitized[field] = input[field]
+        }
+        return sanitized
+    }, {} as Partial<T>) as T
+}

@@ -51,6 +51,9 @@ export class DDBProduct implements Product {
 
     @attribute({memberType: embed(DDBEntitlement)})
     entitlements: Map<string, Entitlement>
+
+    @attribute()
+    stripeProductId?: string
 }
 
 export class DDBProductDao implements ProductDao {
@@ -59,11 +62,13 @@ export class DDBProductDao implements ProductDao {
     }
 
     async createProduct(input: CreateProductInput): Promise<Product> {
-        const item = Object.assign(new DDBProduct, {
-            name: input.name,
-            description: input.description,
-            entitlements: input.entitlements,
-        })
+        const item = Object.assign(new DDBProduct, input)
+        if (item.description === null) {
+            delete item.description
+        }
+        if (item.stripeProductId === null) {
+            delete item.stripeProductId
+        }
         return this.mapper.put(item)
             .then(product => {
                 const p = (product as Product)
@@ -71,7 +76,7 @@ export class DDBProductDao implements ProductDao {
                 delete p.plan
                 return product
             })
-            .catch(logError('Failed to insert Product'))
+            .catch(logError('Failed to insert Product ' + JSON.stringify(input)))
     }
 
     async deleteProduct(productId: string): Promise<Product|null> {
@@ -109,11 +114,11 @@ export class DDBProductDao implements ProductDao {
                     throw new NotFoundError()
                 }
                 let entitlements = item.entitlements
-                if (input.entitlements) {
-                    entitlements = await this.sanitizeEntitlements(item.entitlements)
+                if (input.hasOwnProperty('entitlements')) {
+                    entitlements = await this.sanitizeEntitlements(input.entitlements)
                 }
                 if (input.addEntitlements) {
-                    (await this.sanitizeEntitlements(objectToMap(input.addEntitlements)))
+                    (await this.sanitizeEntitlements(input.addEntitlements))
                         .forEach((entitlement, resourceId) => {
                         entitlements.set(resourceId, entitlement)
                     })
@@ -125,31 +130,44 @@ export class DDBProductDao implements ProductDao {
                 if (entitlements !== item.entitlements) {
                     updates.entitlements = entitlements
                 }
-                if (input.name && input.name !== item.name) {
+                if (input.hasOwnProperty('name') && input.name !== item.name) {
                     updates.name = input.name
                 }
-                if (input.description && input.description != item.description) {
+                if (input.hasOwnProperty('description') && input.description != item.description) {
                     updates.description = input.description
+                }
+                if (input.hasOwnProperty('stripeProductId') && input.stripeProductId != item.stripeProductId) {
+                    updates.stripeProductId = input.stripeProductId
                 }
                 const updated = Object.assign(new DDBProduct, { ...item, ...updates })
                 return this.mapper.put(updated)
             })
     }
 
-    private async sanitizeEntitlements(entitlements: Map<string, Entitlement>) {
+    private async sanitizeEntitlements(entitlements: {[resourceId: string]: Entitlement}) {
         const resources = (await this.resourceDao.listResources())
             .reduce<Set<string>>((resourceSet, resource) => {
                 resourceSet.add(resource.resourceId)
                 return resourceSet
             }, new Set([]))
         const sanitized = new Map<string, Entitlement>()
-        entitlements.forEach((entitlement, resourceId) => {
+        for (const resourceId in entitlements) {
             if (!resources.has(resourceId)) {
                 console.log('Invalid resourceId', resourceId)
                 return
             }
-            sanitized.set(resourceId, entitlement)
-        })
+            sanitized.set(resourceId, prepareEntitlementForDynamo(entitlements[resourceId]))
+        }
         return sanitized
+    }
+}
+
+/**
+ * Just in case the input has booleans in the 'value' field, cast it to a number
+ */
+function prepareEntitlementForDynamo(entitlement: Entitlement) {
+    return {
+        value: +entitlement.value,
+        cumulative: !!entitlement.cumulative,
     }
 }

@@ -6,7 +6,7 @@ import {CATALOG_TABLE, fetchAll, logError} from './index'
 import PlanDao from '../plan-dao'
 import {DataMapper, ItemNotFoundException, QueryIterator, ScanOptions} from '@aws/dynamodb-data-mapper'
 import {AWSError} from 'aws-sdk'
-import {BadInputError} from '../../exceptions'
+import {BadInputError, NotFoundError} from '../../exceptions'
 
 export const PLANS_GSI = 'PlansIndex'
 export type Currency = 'CAD' | 'USD' | 'MXN'
@@ -75,6 +75,7 @@ export class DDBPlan implements Plan {
     toPlan(): Plan {
         const p = { ...this, currency: this.currency, name: this.name }
         delete p.plan
+        delete p._name
         return p
     }
 }
@@ -129,6 +130,9 @@ export class DDBPlanDao implements PlanDao {
     updatePlan(input: ModifyPlanInput): Promise<Plan> {
         return this.getPlan(input.planId)
             .then(async item => {
+                if (!item) {
+                    throw new NotFoundError()
+                }
                 const updated = Object.assign(new DDBPlan, {...item, ...input})
                 if (makePlanKey(item.currency, item.name) !== makePlanKey(updated.currency, updated.name)) {
                     // Ideally we would transactionally put a new item and delete the old one

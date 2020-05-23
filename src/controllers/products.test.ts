@@ -77,13 +77,29 @@ describe('Products', () => {
             const res = await request(app).patch(`/products/${productId}`).send(input)
             expect(res.status).toEqual(200)
             expect(res.body.product).toBeDefined()
-            expect(res.body.product.productId).toEqual(productId)
-            expect(res.body.product.name).toEqual(input.name)
-            const product = await productDao.getProduct(productId)
+            const product = res.body.product as Product
+            expect(product.productId).toEqual(productId)
             expect(product.name).toEqual(input.name)
+            const dbProduct = await productDao.getProduct(productId)
+            expect(dbProduct.name).toEqual(input.name)
         })
+
+        it('Updates entitlements', async () => {
+            const {resourceId} = await createTestResource('foo')
+            const {productId} = await createTestProduct('update-ent')
+            const input: ModifyProductInput = {
+                productId,
+                entitlements: {
+                    [resourceId]: {value: 2, cumulative: true},
+                },
+            }
+            const res = await request(app).patch(`/products/${productId}`).send(input)
+            expect(res.status).toEqual(200)
+            expect(res.body.product.entitlements).toEqual(input.entitlements)
+        })
+
         it('Throws a 404 when nonexistent', async () => {
-            const response = await request(app).get(`/products/${uuid()}`)
+            const response = await request(app).patch(`/products/${uuid()}`)
             expect(response.status).toEqual(404)
         })
     })

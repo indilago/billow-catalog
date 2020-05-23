@@ -1,7 +1,7 @@
 import {Express} from 'express'
 import {ResourceDao} from '../persistence/resource-dao'
 import {BadInputError, NotFoundError} from '../exceptions'
-import {errorResponse} from './util'
+import {errorResponse, filterFields} from './util'
 import {CreateProductInput, Entitlement, ModifyProductInput, Product} from '../models/product'
 import {ProductDao} from '../persistence/product-dao'
 
@@ -44,13 +44,15 @@ async function validateCreateProduct(resourceDao: ResourceDao, input: any): Prom
     if (errors.length) {
         throw new BadInputError(errors)
     }
-    return input as CreateProductInput
+    const validFields: (keyof CreateProductInput)[] =
+        ['name', 'description', 'entitlements', 'stripeProductId']
+    return filterFields<CreateProductInput>(validFields, input)
 }
 
 /**
  * @throws BadInputError
  */
-async function validateModifyProduct(input: any): Promise<ModifyProductInput> {
+async function validateModifyProduct(resourceDao: ResourceDao, input: any): Promise<ModifyProductInput> {
     const errors = []
     if (!input.productId) {
         errors.push('A productId is required')
@@ -61,10 +63,21 @@ async function validateModifyProduct(input: any): Promise<ModifyProductInput> {
     if (input.description?.length > 127) {
         errors.push(`Field 'description' must be shorter than 128 characters`)
     }
+    if (input.stripeProductId?.length > 127) {
+        errors.push(`Field 'stripeProductId' must be shorter than 128 characters`)
+    }
+    if (input.entitlements) {
+        errors.push(...(await validateEntitlements(resourceDao, input.entitlements)))
+    }
+    if (input.addEntitlements) {
+        errors.push(...(await validateEntitlements(resourceDao, input.addEntitlements)))
+    }
     if (errors.length) {
         throw new BadInputError(errors)
     }
-    return input as ModifyProductInput
+    const validFields: (keyof ModifyProductInput)[] =
+        ['productId', 'name', 'description', 'stripeProductId', 'entitlements', 'addEntitlements', 'removeEntitlements']
+    return filterFields<ModifyProductInput>(validFields, input)
 }
 
 function mapToObject(map?: Map<string, any>) {
@@ -126,7 +139,7 @@ export default function ProductsController(app: Express, products: ProductDao, r
         if (!req.body) {
             return errorResponse(res)(new BadInputError(['No input received']))
         }
-        validateModifyProduct({ ...req.body, productId: req.params.id })
+        validateModifyProduct(resources, { ...req.body, productId: req.params.id })
             .then(input => products.updateProduct(input))
             .then(product => res.send({product: marshallProduct(product)}))
             .catch(errorResponse(res))
