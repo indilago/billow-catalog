@@ -96,7 +96,7 @@ export class DDBProductDao implements ProductDao {
                 if (isResourceNotFound(err)) {
                     return null
                 }
-                throw err
+                logError(`Failed to get product ${productId}`)(err)
             })
     }
 
@@ -105,6 +105,7 @@ export class DDBProductDao implements ProductDao {
             filter: { subject: 'plan', ...equals(PRODUCT_METADATA_VALUE) },
         })
         return fetchAll(query)
+            .catch(logError('Failed to list products'))
     }
 
     updateProduct(input: ModifyProductInput): Promise<Product> {
@@ -142,6 +143,7 @@ export class DDBProductDao implements ProductDao {
                 const updated = Object.assign(new DDBProduct, { ...item, ...updates })
                 return this.mapper.put(updated)
             })
+            .catch(logError(`Failed to update product ${input}`))
     }
 
     private async sanitizeEntitlements(entitlements: {[resourceId: string]: Entitlement}) {

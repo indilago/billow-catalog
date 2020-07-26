@@ -13,6 +13,7 @@ import {
 } from '../../models/resource'
 import {ResourceDao} from '../resource-dao'
 import {NotFoundError} from '../../exceptions'
+import {log} from 'util'
 
 export const RESOURCES_GSI = 'ResourcesIndex'
 
@@ -80,6 +81,7 @@ export class DDBResourceDao implements ResourceDao {
                 }
                 return results[0]
             })
+            .catch(logError(`Failed to get resource ${resourceId}`))
     }
 
     async listResources(): Promise<Resource[]> {
@@ -88,6 +90,7 @@ export class DDBResourceDao implements ResourceDao {
             indexName: RESOURCES_GSI,
         })
         return fetchAll(query)
+            .catch(logError('Failed to list resources'))
     }
 
     updateResource(input: ModifyResourceInput): Promise<Resource> {
@@ -99,5 +102,6 @@ export class DDBResourceDao implements ResourceDao {
                 const updated = Object.assign(new DDBResource, { ...item, ...input })
                 return this.mapper.put(updated)
             })
+            .catch(logError(`Failed to update resource ${input}`))
     }
 }

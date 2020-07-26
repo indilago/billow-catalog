@@ -1,21 +1,44 @@
+abstract class BillowError extends Error {
+    readonly _errorClass = 'BillowError'
+    protected constructor(readonly code: string,
+                readonly httpStatus: number,
+                readonly message: string,
+                readonly cause?: Error) {
+        super(message);
+    }
+}
+export const isBillowError = (arg: any): arg is BillowError =>
+    arg?._errorClass === 'BillowError'
+
 /**
  * BadInputError
  */
-export class BadInputError extends Error {
+export class BadInputError extends BillowError {
     constructor(readonly errors: string[]) {
-        super('Invalid input')
+        super('BadInputError', 400, 'Bad input')
     }
 }
-BadInputError.prototype.name = 'BadInputError'
-export const isBadInputError = (arg: any): arg is BadInputError => arg?.name === BadInputError.prototype.name
+export const isBadInputError = (arg: any): arg is BadInputError =>
+    arg?.code === 'BadInputError'
 
 /**
  * NotFoundError
  */
-export class NotFoundError extends Error {
+export class NotFoundError extends BillowError {
     constructor(readonly cause?: Error) {
-        super('Resource not found')
+        super('NotFoundError', 404, 'Resource not found', cause)
     }
 }
-NotFoundError.prototype.name = 'NotFoundError'
-export const isNotFoundError = (arg: any): arg is NotFoundError => arg?.name === NotFoundError.prototype.name
+export const isNotFoundError = (arg: any): arg is NotFoundError =>
+    arg?.code === 'NotFoundError'
+
+/**
+ * ResourceConflictError
+ */
+export class ResourceConflictError extends BillowError {
+    constructor(readonly resource?: any) {
+        super('ResourceConflictError', 419, 'Resource already exists')
+    }
+}
+export const isResourceConflictError = (arg: any): arg is ResourceConflictError =>
+    arg?.code === 'ResourceConflictError'

@@ -6,7 +6,7 @@ import {CATALOG_TABLE, fetchAll, logError} from './index'
 import PlanDao from '../plan-dao'
 import {DataMapper, ItemNotFoundException, QueryIterator, ScanOptions} from '@aws/dynamodb-data-mapper'
 import {AWSError} from 'aws-sdk'
-import {BadInputError, NotFoundError} from '../../exceptions'
+import {BadInputError, NotFoundError, ResourceConflictError} from '../../exceptions'
 
 export const PLANS_GSI = 'PlansIndex'
 export type Currency = 'CAD' | 'USD' | 'MXN'
@@ -92,6 +92,7 @@ export class DDBPlanDao implements PlanDao {
                 }
                 return results[0].toPlan()
             })
+            .catch(logError(`Failed to get plan ${planId}`))
     }
 
     createPlan(input: CreatePlanInput): Promise<Plan> {
@@ -103,12 +104,18 @@ export class DDBPlanDao implements PlanDao {
             stripePlanId: input.stripePlanId,
         })
         const options = {condition: { subject: 'plan', ...notEquals(makePlanKey(input.currency, input.name))}}
-        // const options = {}
         return this.mapper.put(item, options)
             .then(plan => plan.toPlan())
             .catch(err => {
                 if ((err as AWSError).code === 'ConditionalCheckFailedException') {
-                    throw new BadInputError(['Plan with input combination of (productId, currency, name) exists'])
+                    console.log('Plan with input combination of (productId, currency, name) exists')
+                    return this.listPlans(input.productId, input.currency)
+                        .then(results => {
+                            if (results.length) {
+                                throw new ResourceConflictError(results[0])
+                            }
+                            throw err
+                        })
                 }
                 throw err
             })
@@ -149,6 +156,7 @@ export class DDBPlanDao implements PlanDao {
                 return this.mapper.put(updated)
             })
             .then(plan => plan.toPlan())
+            .catch(logError(`Failed to update plan ${input}`))
     }
 
     private queryPlans(productId: string, currency?: Currency): QueryIterator<DDBPlan> {
@@ -188,5 +196,6 @@ export class DDBPlanDao implements PlanDao {
                 return false
             }
         }).then(plans => plans.map(plan => plan.toPlan()))
+            .catch(logError(`Failed to list plans (${productId}, ${currency}, ${effectiveDate})`))
     }
 }

@@ -10,6 +10,7 @@ import PlanDao from '../plan-dao'
 import {ConditionExpression, equals} from '@aws/dynamodb-expressions'
 
 export const CATALOG_TABLE = process.env.CATALOG_TABLE || 'BillowCatalog'
+export const SUBSCRIPTIONS_TABLE = process.env.SUBSCRIPTIONS_TABLE || 'BillowSubscriptions'
 const DEFAULT_QUERY_LIMIT = 1000
 const DEFAULT_FILTER = () => true
 
